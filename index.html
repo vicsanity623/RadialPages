@@ -2,151 +2,172 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#00ffcc">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#050505">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="manifest" href="manifest.json">
-    <title>VicSanity623 | Pages Portal</title>
+    <title>VicSanity623 Portal</title>
     
     <style>
         :root {
             --bg-dark: #050505;
-            --bg-radial: #121212;
             --accent: #00ffcc;
-            --accent-glow: rgba(0, 255, 204, 0.4);
-            --glass-bg: rgba(255, 255, 255, 0.03);
-            --glass-border: rgba(255, 255, 255, 0.15);
+            --accent-glow: rgba(0, 255, 204, 0.5);
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
             --text-main: #ffffff;
-            --hub-size: 110px;
-            --bubble-size: 70px;
-            --ring-radius: 160px;
+            --hub-size: 100px;
+            --bubble-base: 60px; 
+            --bubble-focus: 110px; /* Size when at 12 o'clock */
+            --ring-radius: 150px;
         }
 
-        * { box-sizing: border-box; user-select: none; -webkit-user-select: none; touch-action: none; outline: none; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; user-select: none; -webkit-user-select: none; touch-action: none; -webkit-tap-highlight-color: transparent; }
 
         body {
             margin: 0; padding: 0;
-            width: 100vw; height: 100vh;
+            width: 100vw; height: 100dvh; /* dvh fixes PWA layout shifts */
             background-color: var(--bg-dark);
-            background-image: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%);
+            background-image: radial-gradient(circle at 50% 60%, #1a1a1a 0%, #000000 100%);
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
             color: var(--text-main);
         }
 
-        /* Ambient animated background mesh */
+        /* Background Mesh */
         .ambient-mesh {
             position: absolute; width: 100%; height: 100%;
             background: 
-                radial-gradient(circle at 15% 25%, rgba(0, 255, 204, 0.05), transparent 40%),
-                radial-gradient(circle at 85% 75%, rgba(138, 43, 226, 0.05), transparent 40%);
+                radial-gradient(circle at 10% 20%, rgba(0, 255, 204, 0.04), transparent 50%),
+                radial-gradient(circle at 90% 80%, rgba(138, 43, 226, 0.04), transparent 50%);
             z-index: 0; pointer-events: none;
         }
 
-        /* SVG Connections Layer */
+        /* SVG Lines */
         #connections {
-            position: absolute; top: 0; left: 0;
-            width: 100%; height: 100%;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             z-index: 1; pointer-events: none;
-            filter: drop-shadow(0 0 2px var(--accent-glow));
         }
 
         line {
-            stroke: var(--glass-border);
-            stroke-width: 1;
-            transition: stroke 0.3s ease;
+            stroke: var(--glass-border); stroke-width: 1;
+            transition: stroke 0.3s;
+        }
+        line.active { stroke: var(--accent); stroke-width: 2; filter: drop-shadow(0 0 5px var(--accent)); }
+
+        /* --- INFO PANEL (Top Display) --- */
+        #info-panel {
+            position: absolute; top: 10%; 
+            width: 85%; max-width: 400px;
+            min-height: 100px;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 20px;
+            text-align: center;
+            z-index: 50;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
-        line.active {
-            stroke: var(--accent);
-            stroke-width: 2.5;
-            filter: drop-shadow(0 0 8px var(--accent));
+        #info-title {
+            font-size: 24px; font-weight: 700; color: var(--accent);
+            letter-spacing: 1px; margin-bottom: 8px;
+            text-shadow: 0 0 10px rgba(0, 255, 204, 0.3);
+            text-transform: uppercase;
         }
 
-        /* Container */
+        #info-desc {
+            font-size: 13px; color: #ccc; line-height: 1.4;
+        }
+
+        /* --- CENTER HUB --- */
         #interface-layer {
             position: relative; width: 100%; height: 100%;
             display: flex; justify-content: center; align-items: center;
             z-index: 2;
         }
 
-        /* Center Hub */
         .hub {
             width: var(--hub-size); height: var(--hub-size);
             border-radius: 50%;
-            background: rgba(0,0,0,0.6);
+            background: rgba(0,0,0,0.5);
             backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-            border: 1px solid rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.1);
             position: absolute; z-index: 10;
             display: flex; justify-content: center; align-items: center;
-            box-shadow: 0 0 50px rgba(0,0,0,0.9);
-            pointer-events: none; /* Let touches pass to ring drag */
+            box-shadow: 0 0 40px rgba(0,0,0,0.8);
+            pointer-events: none; 
         }
 
         .hub img {
             width: 100%; height: 100%; border-radius: 50%;
-            object-fit: cover; border: 2px solid rgba(255,255,255,0.05);
+            object-fit: cover; opacity: 0.9;
         }
 
         .hub-name {
-            position: absolute; bottom: -35px;
-            font-size: 14px; letter-spacing: 3px;
-            text-transform: uppercase; opacity: 0.6; font-weight: 300;
-            text-shadow: 0 2px 4px rgba(0,0,0,1);
+            position: absolute; bottom: -30px;
+            font-size: 12px; letter-spacing: 4px;
+            text-transform: uppercase; opacity: 0.5;
         }
 
-        /* Project Bubbles */
+        /* --- BUBBLES --- */
         .bubble {
-            width: var(--bubble-size); height: var(--bubble-size);
+            width: var(--bubble-base); height: var(--bubble-base);
             border-radius: 50%;
             background: var(--glass-bg);
-            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
             border: 1px solid var(--glass-border);
             position: absolute;
             display: flex; justify-content: center; align-items: center;
             cursor: pointer;
-            box-shadow: 0 5px 25px rgba(0,0,0,0.4);
-            transition: background 0.2s, transform 0s; /* No transform transition during drag */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
             z-index: 5;
+            /* Smooth sizing transitions */
+            transition: width 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+                        height 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+                        background 0.3s, border-color 0.3s, box-shadow 0.3s;
+            will-change: transform, width, height;
         }
 
-        .bubble:active, .bubble.dragging {
-            background: var(--accent-glow);
-            border-color: var(--accent);
-            box-shadow: 0 0 30px var(--accent-glow);
+        .bubble-icon { font-size: 24px; transition: font-size 0.4s; pointer-events: none; }
+        
+        /* Focused State (Logic applied via JS) */
+        .bubble.focused {
+            width: var(--bubble-focus); height: var(--bubble-focus);
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.4);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
             z-index: 20;
         }
+        
+        .bubble.focused .bubble-icon { font-size: 40px; }
 
-        .bubble-icon { font-size: 26px; pointer-events: none; }
-
-        .bubble-label {
-            position: absolute; top: 120%;
-            font-size: 11px; color: #fff;
-            background: rgba(0,0,0,0.8);
-            padding: 4px 8px; border-radius: 4px;
-            opacity: 0; transform: translateY(-10px);
-            transition: all 0.2s; pointer-events: none;
-            white-space: nowrap; border: 1px solid #333;
+        .bubble.dragging {
+            background: var(--accent-glow) !important;
+            border-color: var(--accent) !important;
+            box-shadow: 0 0 40px var(--accent-glow);
         }
 
-        .bubble:hover .bubble-label, .bubble.dragging .bubble-label {
-            opacity: 1; transform: translateY(0);
-        }
-
+        /* Instructions */
         .instructions {
-            position: absolute; bottom: 40px;
+            position: absolute; bottom: 30px;
             font-size: 10px; color: rgba(255,255,255,0.2);
-            text-transform: uppercase; letter-spacing: 1px;
-            pointer-events: none;
+            text-transform: uppercase; letter-spacing: 2px;
+            pointer-events: none; width: 100%; text-align: center;
         }
         
-        /* Mobile Adjustments */
         @media (max-width: 600px) {
-            :root { --hub-size: 90px; --bubble-size: 60px; --ring-radius: 130px; }
+            :root { --hub-size: 90px; --ring-radius: 125px; --bubble-focus: 100px; }
+            #info-panel { top: 8%; width: 90%; padding: 15px; }
+            #info-title { font-size: 20px; }
+            #info-desc { font-size: 12px; }
         }
     </style>
 </head>
@@ -155,119 +176,183 @@
     <div class="ambient-mesh"></div>
     <svg id="connections"></svg>
 
+    <!-- TOP INFO PANEL -->
+    <div id="info-panel">
+        <div id="info-title">Loading...</div>
+        <div id="info-desc">Select a project to view details</div>
+    </div>
+
     <div id="interface-layer">
         <div class="hub">
             <img src="https://github.com/vicsanity623.png" alt="Profile">
             <div class="hub-name">VicSanity623</div>
         </div>
-        <!-- Bubbles injected by JS -->
+        <!-- Bubbles injected via JS -->
     </div>
 
-    <div class="instructions">Drag dial to rotate • Pull bubble to launch</div>
+    <div class="instructions">Spin Dial • Tap to Focus • Pull to Launch</div>
 
     <script>
         /**
-         * CONFIGURATION: ADD YOUR PAGES HERE
+         * CONFIGURATION
+         * Add 'desc' for the top preview box.
          */
         const pages = [
-            { name: "Repositories", url: "https://github.com/vicsanity623?tab=repositories", icon: "📦" },
-            { name: "MorphFrames",    url: "https://vicsanity623.github.io/GifMaker/", icon: "🩻" },
-            { name: "Goku RPG",   url: "https://vicsanity623.github.io/Monsters/", icon: "👾" }, 
-            { name: "Poke World",     url: "https://vicsanity623.github.io/Pokemon/", icon: "👾" },
-            { name: "Tower Game",url: "https://vicsanity623.github.io/Tower/", icon: "👾" },
-            { name: "Neural Arch",url: "https://vicsanity623.github.io/Neural-Architect/", icon: "🧠" },
-            { name: "SVG Sketch",url: "https://vicsanity623.github.io/Sketch-Art/", icon: "🎨" },
-            { name: "Poke Catch Sim",url: "https://vicsanity623.github.io/Pokemon_Catch_Sim/", icon: "👾" },
-
+            { name: "Repositories", desc: "Browse my complete source code collection on GitHub.", url: "https://github.com/vicsanity623?tab=repositories", icon: "📦" },
+            { name: "MorphFrames",  desc: "A powerful frame interpolation tool for smooth GIF creation.", url: "https://vicsanity623.github.io/GifMaker/", icon: "🩻" },
+            { name: "Goku RPG",     desc: "An retro-style RPG battle system featuring Dragon Ball Z characters.", url: "https://vicsanity623.github.io/Monsters/", icon: "👾" }, 
+            { name: "Poke World",   desc: "Explore a procedural world with wild Pokemon encounters.", url: "https://vicsanity623.github.io/Pokemon/", icon: "🌍" },
+            { name: "Tower Game",   desc: "Strategy tower defense game. Defend the core!", url: "https://vicsanity623.github.io/Tower/", icon: "🏰" },
+            { name: "Neural Arch",  desc: "Visualizer for neural network architecture and data flow.", url: "https://vicsanity623.github.io/Neural-Architect/", icon: "🧠" },
+            { name: "SVG Sketch",   desc: "A lightweight vector drawing tool for quick sketches.", url: "https://vicsanity623.github.io/Sketch-Art/", icon: "🎨" },
+            { name: "Poke Catch",   desc: "Simulation of the capture mechanics found in Pokemon games.", url: "https://vicsanity623.github.io/Pokemon_Catch_Sim/", icon: "⚾" },
         ];
 
-        /* --- LOGIC ENGINE --- */
+        /* --- ENGINE --- */
         const container = document.getElementById('interface-layer');
         const svg = document.getElementById('connections');
+        const infoTitle = document.getElementById('info-title');
+        const infoDesc = document.getElementById('info-desc');
+
         let bubbles = [];
         let lines = [];
         let centerX, centerY;
-        let ringRadius = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--ring-radius'));
+        let ringRadius = 150;
 
-        // Physics State
-        let rotation = 0;
+        // Physics & Interaction
+        let rotation = -Math.PI / 2; // Start at -90deg (12 o'clock)
         let isDraggingRing = false;
         let isDraggingBubble = false;
-        let activeBubbleIdx = -1;
-        let dragStartAngle = 0;
-        let currentRotation = 0;
+        let activeBubbleIdx = -1; // The one being dragged
+        let focusedBubbleIdx = 0; // The one at 12 o'clock
         
-        // Setup
+        let dragStartAngle = 0;
+        let dragStartRotation = 0;
+        let dragMoved = false;
+
+        // Auto-rotation animation
+        let targetRotation = null;
+        let isAnimating = false;
+
         function init() {
-            resize();
-            pages.forEach((page, i) => createElements(page, i));
+            setupDimensions();
+            createInterface();
             updateLayout();
-            loop();
+            animate();
+            
+            // Fix PWA "Disfigurement" on resize/orientation change
+            if(window.visualViewport) {
+                window.visualViewport.addEventListener('resize', setupDimensions);
+            }
+            window.addEventListener('resize', setupDimensions);
         }
 
-        function createElements(page, index) {
-            // Create Bubble
-            const b = document.createElement('div');
-            b.className = 'bubble';
-            b.innerHTML = `<span class="bubble-icon">${page.icon}</span><div class="bubble-label">${page.name}</div>`;
+        function setupDimensions() {
+            // Use visualViewport if available for accurate PWA sizes
+            const w = window.visualViewport ? window.visualViewport.width : window.innerWidth;
+            const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+            centerX = w / 2;
+            centerY = h / 2;
             
-            // Touch/Mouse Events for Bubble
-            const startDrag = (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                isDraggingBubble = true;
-                activeBubbleIdx = index;
-                b.classList.add('dragging');
-                lines[index].classList.add('active');
-                if(navigator.vibrate) navigator.vibrate(10);
-            };
-
-            b.addEventListener('mousedown', startDrag);
-            b.addEventListener('touchstart', startDrag, {passive: false});
-
-            container.appendChild(b);
+            // Adjust radius based on screen width
+            ringRadius = w < 600 ? 125 : 160;
             
-            // Create Line
-            const l = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            svg.appendChild(l);
-
-            bubbles.push({ el: b, x: 0, y: 0, anchorX: 0, anchorY: 0, url: page.url });
-            lines.push(l);
-        }
-
-        function resize() {
-            centerX = window.innerWidth / 2;
-            centerY = window.innerHeight / 2;
-            ringRadius = window.innerWidth < 600 ? 130 : 160;
+            // Force redraw
             updateLayout();
         }
 
-        // --- CORE MATH ---
-        function updateLayout() {
-            const step = (Math.PI * 2) / bubbles.length;
-            
-            bubbles.forEach((b, i) => {
-                // If dragging this specific bubble, skip auto-placement
-                if(isDraggingBubble && activeBubbleIdx === i) return;
+        function createInterface() {
+            pages.forEach((page, i) => {
+                // Bubble
+                const b = document.createElement('div');
+                b.className = 'bubble';
+                b.innerHTML = `<span class="bubble-icon">${page.icon}</span>`;
+                
+                // Interaction Handlers
+                const start = (e) => startBubbleInteract(e, i);
+                b.addEventListener('mousedown', start);
+                b.addEventListener('touchstart', start, {passive:false});
 
-                const angle = (step * i) + rotation;
-                
-                // Calculate anchor position on ring
-                b.anchorX = centerX + Math.cos(angle) * ringRadius;
-                b.anchorY = centerY + Math.sin(angle) * ringRadius;
-                
-                // If not snapping back (handled by CSS transition later), stick to anchor
-                if (!b.el.style.transition) {
-                    b.x = b.anchorX;
-                    b.y = b.anchorY;
-                    setTransform(b.el, b.x, b.y);
-                    updateLine(i, centerX, centerY, b.x, b.y);
-                }
+                container.appendChild(b);
+
+                // Line
+                const l = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                svg.appendChild(l);
+
+                bubbles.push({ el: b, x: 0, y: 0, anchorX: 0, anchorY: 0, angle: 0, url: page.url });
+                lines.push(l);
             });
         }
 
+        // --- MATH & LAYOUT ---
+
+        function updateLayout() {
+            const count = bubbles.length;
+            const step = (Math.PI * 2) / count;
+            
+            // 1. Calculate closest bubble to 12 o'clock (-PI/2)
+            // Normalize current rotation to 0..2PI relative to -PI/2
+            let closestDist = Infinity;
+            let closestIdx = -1;
+
+            bubbles.forEach((b, i) => {
+                // Determine angle
+                let angle = (step * i) + rotation;
+                b.angle = angle; // Store for logic
+
+                // Anchor position (Ring)
+                b.anchorX = centerX + Math.cos(angle) * ringRadius;
+                b.anchorY = centerY + Math.sin(angle) * ringRadius;
+
+                // Find Focus (Distance to -PI/2 or 270deg)
+                // We use Math.atan2 coordinates: -PI/2 is top.
+                // We calculate vector distance to top center point (0, -radius)
+                const distToTop = Math.sqrt(Math.pow(b.anchorX - centerX, 2) + Math.pow(b.anchorY - (centerY - ringRadius), 2));
+                
+                if (distToTop < closestDist) {
+                    closestDist = distToTop;
+                    closestIdx = i;
+                }
+
+                // If currently dragging THIS bubble, ignore grid placement
+                if (isDraggingBubble && activeBubbleIdx === i) return;
+
+                // Position DOM
+                setTransform(b.el, b.anchorX, b.anchorY);
+                updateLine(i, centerX, centerY, b.anchorX, b.anchorY);
+            });
+
+            // 2. Update Focused State (Visuals & Info)
+            if (closestIdx !== -1 && closestIdx !== focusedBubbleIdx) {
+                updateFocus(closestIdx);
+            }
+        }
+
+        function updateFocus(index) {
+            // Remove old focus
+            if(focusedBubbleIdx !== -1 && bubbles[focusedBubbleIdx]) {
+                bubbles[focusedBubbleIdx].el.classList.remove('focused');
+            }
+            // Add new focus
+            focusedBubbleIdx = index;
+            bubbles[index].el.classList.add('focused');
+            
+            // Update Text Panel
+            infoTitle.innerText = pages[index].name;
+            infoDesc.innerText = pages[index].desc;
+        }
+
         function setTransform(el, x, y) {
-            el.style.transform = `translate(${x - centerX}px, ${y - centerY}px)`;
+            // Center element based on its current width (which changes via CSS transition)
+            const w = el.offsetWidth / 2;
+            el.style.transform = `translate(${x - centerX - w}px, ${y - centerY - w}px)`;
+            // NOTE: We subtract 'w' here in JS because CSS 'translate' moves top-left corner.
+            // But since width animates in CSS, we need a slight hack or just rely on flex center.
+            // Actually, best way is to set transform translate from center, and use margin-top/left -50% in CSS.
+            // But here, let's keep it simple:
+            el.style.left = x + 'px';
+            el.style.top = y + 'px';
+            el.style.transform = 'translate(-50%, -50%)'; // This handles the width changes automatically!
         }
 
         function updateLine(i, x1, y1, x2, y2) {
@@ -278,52 +363,203 @@
         }
 
         // --- INTERACTION ---
-        
-        // Ring Rotation
-        const handleStart = (e) => {
+
+        function startBubbleInteract(e, index) {
+            e.preventDefault(); e.stopPropagation();
+            isDraggingBubble = true;
+            activeBubbleIdx = index;
+            dragMoved = false;
+
+            const pt = getPoint(e);
+            bubbles[index].startDragX = pt.x;
+            bubbles[index].startDragY = pt.y;
+
+            bubbles[index].el.classList.add('dragging');
+            lines[index].classList.add('active');
+            
+            // Stop any auto-rotation
+            targetRotation = null;
+        }
+
+        function handleRingStart(e) {
             if(isDraggingBubble) return;
             isDraggingRing = true;
+            dragMoved = false;
             const pt = getPoint(e);
-            dragStartAngle = Math.atan2(pt.y - centerY, pt.x - centerX) - rotation;
-        };
+            dragStartAngle = Math.atan2(pt.y - centerY, pt.x - centerX);
+            dragStartRotation = rotation;
+            targetRotation = null; // Stop animation
+        }
 
-        const handleMove = (e) => {
+        function handleMove(e) {
             const pt = getPoint(e);
+            dragMoved = true;
 
             if (isDraggingBubble) {
                 // Slingshot logic
                 const b = bubbles[activeBubbleIdx];
                 b.x = pt.x;
                 b.y = pt.y;
-                setTransform(b.el, b.x, b.y);
+                
+                // DOM update
+                b.el.style.left = b.x + 'px';
+                b.el.style.top = b.y + 'px';
+                
                 updateLine(activeBubbleIdx, centerX, centerY, b.x, b.y);
+
             } else if (isDraggingRing) {
-                // Rotation logic
-                const angle = Math.atan2(pt.y - centerY, pt.x - centerX);
-                rotation = angle - dragStartAngle;
+                const currentAngle = Math.atan2(pt.y - centerY, pt.x - centerX);
+                const delta = currentAngle - dragStartAngle;
+                rotation = dragStartRotation + delta;
                 updateLayout();
             }
-        };
+        }
 
-        const handleEnd = (e) => {
+        function handleEnd(e) {
             if (isDraggingBubble) {
                 const b = bubbles[activeBubbleIdx];
-                // Distance from anchor
                 const dist = Math.hypot(b.x - b.anchorX, b.y - b.anchorY);
-                
-                if (dist > 80) {
+                const isFocused = (activeBubbleIdx === focusedBubbleIdx);
+
+                // LOGIC:
+                // 1. If we dragged far (Slingshot) -> Launch
+                if (dist > 70) {
                     launch(b);
-                } else {
+                } 
+                // 2. If it was a TAP (little movement)
+                else if (dist < 10) { 
+                     // If it's NOT the focused bubble -> Rotate to it
+                    if (!isFocused) {
+                        snapToFocus(activeBubbleIdx);
+                    } 
+                    // If it IS the focused bubble -> Launch it? Or do nothing?
+                    // Let's just do a small bounce to indicate readiness
+                    else {
+                        snapBack(b, activeBubbleIdx);
+                    }
+                }
+                // 3. Just dragging a little bit but not enough to launch
+                else {
                     snapBack(b, activeBubbleIdx);
                 }
-                
+
                 b.el.classList.remove('dragging');
                 lines[activeBubbleIdx].classList.remove('active');
                 isDraggingBubble = false;
                 activeBubbleIdx = -1;
+            } else if (isDraggingRing) {
+                isDraggingRing = false;
+                // Snap to nearest slot
+                snapRingToGrid();
             }
-            isDraggingRing = false;
-        };
+        }
+
+        // --- ANIMATION & PHYSICS ---
+
+        function snapRingToGrid() {
+            const count = bubbles.length;
+            const step = (Math.PI * 2) / count;
+            
+            // We want the rotation to result in an item being at -PI/2
+            // Current 'offset' from -PI/2
+            const offset = rotation - (-Math.PI / 2);
+            // Find how many 'steps' we are away
+            const stepsAway = Math.round(offset / step);
+            
+            // Target rotation
+            const target = (-Math.PI / 2) + (stepsAway * step);
+            animateRotationTo(target);
+        }
+
+        function snapToFocus(index) {
+            // We want index 'i' to be at -PI/2
+            const count = bubbles.length;
+            const step = (Math.PI * 2) / count;
+            
+            // Current angle of this item is (step*index + rotation)
+            // We want newRotation such that: (step*index + newRotation) = -PI/2
+            // So: newRotation = -PI/2 - (step*index)
+            
+            let target = (-Math.PI / 2) - (step * index);
+            
+            // Optimize: find the shortest path (clockwise vs counter-clockwise)
+            // Normalize current rotation and target to avoid spinning 360 unnecessarily
+            const PI2 = Math.PI * 2;
+            
+            // Current rotation modulo 2PI
+            let currentMod = rotation % PI2;
+            
+            // Adjust target to be close to current
+            // This is complex, simple approach: just animate to the calculated target
+            // But we might spin wildly if we don't adjust turns.
+            
+            // Simple approach: calculate difference
+            let diff = target - rotation;
+            // Normalize diff to -PI to +PI
+            while (diff < -Math.PI) diff += PI2;
+            while (diff > Math.PI) diff -= PI2;
+            
+            animateRotationTo(rotation + diff);
+        }
+
+        function animateRotationTo(target) {
+            targetRotation = target;
+            isAnimating = true;
+        }
+
+        function animate() {
+            if (isAnimating && targetRotation !== null) {
+                // Lerp rotation
+                const dist = targetRotation - rotation;
+                if (Math.abs(dist) < 0.005) {
+                    rotation = targetRotation;
+                    targetRotation = null;
+                    isAnimating = false;
+                } else {
+                    rotation += dist * 0.15; // Speed of auto-spin
+                }
+                updateLayout();
+            }
+            requestAnimationFrame(animate);
+        }
+
+        function launch(bubble) {
+            if(navigator.vibrate) navigator.vibrate(50);
+            bubble.el.style.background = '#fff';
+            bubble.el.style.transition = 'all 0.1s';
+            
+            setTimeout(() => {
+                window.location.href = bubble.url;
+                setTimeout(() => {
+                    bubble.el.style.background = ''; // Reset if they return
+                    updateLayout();
+                }, 500);
+            }, 100);
+        }
+
+        function snapBack(bubble, idx) {
+            // CSS Transition for the bubble DOM
+            bubble.el.style.transition = 'left 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), top 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+            bubble.el.style.left = bubble.anchorX + 'px';
+            bubble.el.style.top = bubble.anchorY + 'px';
+
+            // JS Animation for the SVG line
+            const startX = bubble.x; const startY = bubble.y;
+            const startTime = performance.now();
+
+            function animLine(t) {
+                const p = Math.min((t - startTime) / 300, 1);
+                const cx = startX + (bubble.anchorX - startX) * p;
+                const cy = startY + (bubble.anchorY - startY) * p;
+                updateLine(idx, centerX, centerY, cx, cy);
+                if (p < 1) requestAnimationFrame(animLine);
+                else {
+                    bubble.el.style.transition = ''; // clear override
+                    updateLayout();
+                }
+            }
+            requestAnimationFrame(animLine);
+        }
 
         function getPoint(e) {
             return {
@@ -332,82 +568,17 @@
             };
         }
 
-        function launch(bubble) {
-            if(navigator.vibrate) navigator.vibrate([30,50,30]);
-            // Flash effect
-            bubble.el.style.backgroundColor = '#fff';
-            setTimeout(() => {
-                window.location.href = bubble.url;
-                // Reset visuals in case user comes back
-                bubble.el.style.backgroundColor = '';
-                updateLayout();
-            }, 150);
-        }
-
-        function snapBack(bubble, idx) {
-            // Use CSS transition for smooth snap
-            bubble.el.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-            setTransform(bubble.el, bubble.anchorX, bubble.anchorY);
-            
-            // We need to animate the line via JS frame loop because SVG lines don't transition with CSS transforms
-            const startTime = performance.now();
-            const startX = bubble.x;
-            const startY = bubble.y;
-            
-            function animateSnap(time) {
-                const progress = (time - startTime) / 400; // 400ms duration
-                if (progress < 1) {
-                    // Simple lerp for line
-                    const currX = startX + (bubble.anchorX - startX) * progress;
-                    const currY = startY + (bubble.anchorY - startY) * progress;
-                    updateLine(idx, centerX, centerY, currX, currY);
-                    requestAnimationFrame(animateSnap);
-                } else {
-                    // Finish
-                    bubble.el.style.transition = ''; // clear transition
-                    updateLine(idx, centerX, centerY, bubble.anchorX, bubble.anchorY);
-                    updateLayout();
-                }
-            }
-            requestAnimationFrame(animateSnap);
-        }
-
-        function loop() {
-            // Keep animation frame open for expansion
-            requestAnimationFrame(loop);
-        }
-
-        // Global Listeners
-        window.addEventListener('resize', resize);
-        document.addEventListener('mousedown', handleStart);
+        // --- GLOBAL LISTENERS ---
+        document.addEventListener('mousedown', handleRingStart);
+        document.addEventListener('touchstart', handleRingStart, {passive:false});
         document.addEventListener('mousemove', handleMove);
-        document.addEventListener('mouseup', handleEnd);
-        document.addEventListener('touchstart', handleStart, {passive:false});
         document.addEventListener('touchmove', handleMove, {passive:false});
+        document.addEventListener('mouseup', handleEnd);
         document.addEventListener('touchend', handleEnd);
 
-        init();
+        // Start
+        window.addEventListener('load', init);
 
-        // --- SERVICE WORKER REGISTRATION (Force Update Logic) ---
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js').then(reg => {
-                reg.addEventListener('updatefound', () => {
-                    const newWorker = reg.installing;
-                    newWorker.addEventListener('statechange', () => {
-                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            // New version detected. Reload to force update.
-                            console.log('New version found. Reloading...');
-                            window.location.reload();
-                        }
-                    });
-                });
-            });
-            
-            // Reload if controller changes (e.g. claim() called in sw.js)
-            navigator.serviceWorker.addEventListener('controllerchange', () => {
-                window.location.reload();
-            });
-        }
     </script>
 </body>
 </html>
