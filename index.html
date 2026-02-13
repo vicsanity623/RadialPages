@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#00ffcc">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.json">
+    <title>VicSanity623 | Pages Portal</title>
+    
+    <style>
+        :root {
+            --bg-dark: #050505;
+            --bg-radial: #121212;
+            --accent: #00ffcc;
+            --accent-glow: rgba(0, 255, 204, 0.4);
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --text-main: #ffffff;
+            --hub-size: 110px;
+            --bubble-size: 70px;
+            --ring-radius: 160px;
+        }
+
+        * { box-sizing: border-box; user-select: none; -webkit-user-select: none; touch-action: none; outline: none; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            margin: 0; padding: 0;
+            width: 100vw; height: 100vh;
+            background-color: var(--bg-dark);
+            background-image: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-main);
+        }
+
+        /* Ambient animated background mesh */
+        .ambient-mesh {
+            position: absolute; width: 100%; height: 100%;
+            background: 
+                radial-gradient(circle at 15% 25%, rgba(0, 255, 204, 0.05), transparent 40%),
+                radial-gradient(circle at 85% 75%, rgba(138, 43, 226, 0.05), transparent 40%);
+            z-index: 0; pointer-events: none;
+        }
+
+        /* SVG Connections Layer */
+        #connections {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 1; pointer-events: none;
+            filter: drop-shadow(0 0 2px var(--accent-glow));
+        }
+
+        line {
+            stroke: var(--glass-border);
+            stroke-width: 1;
+            transition: stroke 0.3s ease;
+        }
+
+        line.active {
+            stroke: var(--accent);
+            stroke-width: 2.5;
+            filter: drop-shadow(0 0 8px var(--accent));
+        }
+
+        /* Container */
+        #interface-layer {
+            position: relative; width: 100%; height: 100%;
+            display: flex; justify-content: center; align-items: center;
+            z-index: 2;
+        }
+
+        /* Center Hub */
+        .hub {
+            width: var(--hub-size); height: var(--hub-size);
+            border-radius: 50%;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255,255,255,0.2);
+            position: absolute; z-index: 10;
+            display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 0 50px rgba(0,0,0,0.9);
+            pointer-events: none; /* Let touches pass to ring drag */
+        }
+
+        .hub img {
+            width: 100%; height: 100%; border-radius: 50%;
+            object-fit: cover; border: 2px solid rgba(255,255,255,0.05);
+        }
+
+        .hub-name {
+            position: absolute; bottom: -35px;
+            font-size: 14px; letter-spacing: 3px;
+            text-transform: uppercase; opacity: 0.6; font-weight: 300;
+            text-shadow: 0 2px 4px rgba(0,0,0,1);
+        }
+
+        /* Project Bubbles */
+        .bubble {
+            width: var(--bubble-size); height: var(--bubble-size);
+            border-radius: 50%;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            position: absolute;
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.4);
+            transition: background 0.2s, transform 0s; /* No transform transition during drag */
+            z-index: 5;
+        }
+
+        .bubble:active, .bubble.dragging {
+            background: var(--accent-glow);
+            border-color: var(--accent);
+            box-shadow: 0 0 30px var(--accent-glow);
+            z-index: 20;
+        }
+
+        .bubble-icon { font-size: 26px; pointer-events: none; }
+
+        .bubble-label {
+            position: absolute; top: 120%;
+            font-size: 11px; color: #fff;
+            background: rgba(0,0,0,0.8);
+            padding: 4px 8px; border-radius: 4px;
+            opacity: 0; transform: translateY(-10px);
+            transition: all 0.2s; pointer-events: none;
+            white-space: nowrap; border: 1px solid #333;
+        }
+
+        .bubble:hover .bubble-label, .bubble.dragging .bubble-label {
+            opacity: 1; transform: translateY(0);
+        }
+
+        .instructions {
+            position: absolute; bottom: 40px;
+            font-size: 10px; color: rgba(255,255,255,0.2);
+            text-transform: uppercase; letter-spacing: 1px;
+            pointer-events: none;
+        }
+        
+        /* Mobile Adjustments */
+        @media (max-width: 600px) {
+            :root { --hub-size: 90px; --bubble-size: 60px; --ring-radius: 130px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ambient-mesh"></div>
+    <svg id="connections"></svg>
+
+    <div id="interface-layer">
+        <div class="hub">
+            <img src="https://github.com/vicsanity623.png" alt="Profile">
+            <div class="hub-name">VicSanity623</div>
+        </div>
+        <!-- Bubbles injected by JS -->
+    </div>
+
+    <div class="instructions">Drag dial to rotate • Pull bubble to launch</div>
+
+    <script>
+        /**
+         * CONFIGURATION: ADD YOUR PAGES HERE
+         */
+        const pages = [
+            { name: "Repositories", url: "https://github.com/vicsanity623?tab=repositories", icon: "📦" },
+            { name: "About Me",    url: "https://github.com/vicsanity623", icon: "👤" },
+            { name: "Project A",   url: "#", icon: "🚀" }, 
+            { name: "Web App",     url: "#", icon: "⚡" },
+            { name: "3D Demo",     url: "#", icon: "🧊" },
+            { name: "Documentation",url: "#", icon: "📚" },
+        ];
+
+        /* --- LOGIC ENGINE --- */
+        const container = document.getElementById('interface-layer');
+        const svg = document.getElementById('connections');
+        let bubbles = [];
+        let lines = [];
+        let centerX, centerY;
+        let ringRadius = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--ring-radius'));
+
+        // Physics State
+        let rotation = 0;
+        let isDraggingRing = false;
+        let isDraggingBubble = false;
+        let activeBubbleIdx = -1;
+        let dragStartAngle = 0;
+        let currentRotation = 0;
+        
+        // Setup
+        function init() {
+            resize();
+            pages.forEach((page, i) => createElements(page, i));
+            updateLayout();
+            loop();
+        }
+
+        function createElements(page, index) {
+            // Create Bubble
+            const b = document.createElement('div');
+            b.className = 'bubble';
+            b.innerHTML = `<span class="bubble-icon">${page.icon}</span><div class="bubble-label">${page.name}</div>`;
+            
+            // Touch/Mouse Events for Bubble
+            const startDrag = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                isDraggingBubble = true;
+                activeBubbleIdx = index;
+                b.classList.add('dragging');
+                lines[index].classList.add('active');
+                if(navigator.vibrate) navigator.vibrate(10);
+            };
+
+            b.addEventListener('mousedown', startDrag);
+            b.addEventListener('touchstart', startDrag, {passive: false});
+
+            container.appendChild(b);
+            
+            // Create Line
+            const l = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            svg.appendChild(l);
+
+            bubbles.push({ el: b, x: 0, y: 0, anchorX: 0, anchorY: 0, url: page.url });
+            lines.push(l);
+        }
+
+        function resize() {
+            centerX = window.innerWidth / 2;
+            centerY = window.innerHeight / 2;
+            ringRadius = window.innerWidth < 600 ? 130 : 160;
+            updateLayout();
+        }
+
+        // --- CORE MATH ---
+        function updateLayout() {
+            const step = (Math.PI * 2) / bubbles.length;
+            
+            bubbles.forEach((b, i) => {
+                // If dragging this specific bubble, skip auto-placement
+                if(isDraggingBubble && activeBubbleIdx === i) return;
+
+                const angle = (step * i) + rotation;
+                
+                // Calculate anchor position on ring
+                b.anchorX = centerX + Math.cos(angle) * ringRadius;
+                b.anchorY = centerY + Math.sin(angle) * ringRadius;
+                
+                // If not snapping back (handled by CSS transition later), stick to anchor
+                if (!b.el.style.transition) {
+                    b.x = b.anchorX;
+                    b.y = b.anchorY;
+                    setTransform(b.el, b.x, b.y);
+                    updateLine(i, centerX, centerY, b.x, b.y);
+                }
+            });
+        }
+
+        function setTransform(el, x, y) {
+            el.style.transform = `translate(${x - centerX}px, ${y - centerY}px)`;
+        }
+
+        function updateLine(i, x1, y1, x2, y2) {
+            lines[i].setAttribute('x1', x1);
+            lines[i].setAttribute('y1', y1);
+            lines[i].setAttribute('x2', x2);
+            lines[i].setAttribute('y2', y2);
+        }
+
+        // --- INTERACTION ---
+        
+        // Ring Rotation
+        const handleStart = (e) => {
+            if(isDraggingBubble) return;
+            isDraggingRing = true;
+            const pt = getPoint(e);
+            dragStartAngle = Math.atan2(pt.y - centerY, pt.x - centerX) - rotation;
+        };
+
+        const handleMove = (e) => {
+            const pt = getPoint(e);
+
+            if (isDraggingBubble) {
+                // Slingshot logic
+                const b = bubbles[activeBubbleIdx];
+                b.x = pt.x;
+                b.y = pt.y;
+                setTransform(b.el, b.x, b.y);
+                updateLine(activeBubbleIdx, centerX, centerY, b.x, b.y);
+            } else if (isDraggingRing) {
+                // Rotation logic
+                const angle = Math.atan2(pt.y - centerY, pt.x - centerX);
+                rotation = angle - dragStartAngle;
+                updateLayout();
+            }
+        };
+
+        const handleEnd = (e) => {
+            if (isDraggingBubble) {
+                const b = bubbles[activeBubbleIdx];
+                // Distance from anchor
+                const dist = Math.hypot(b.x - b.anchorX, b.y - b.anchorY);
+                
+                if (dist > 80) {
+                    launch(b);
+                } else {
+                    snapBack(b, activeBubbleIdx);
+                }
+                
+                b.el.classList.remove('dragging');
+                lines[activeBubbleIdx].classList.remove('active');
+                isDraggingBubble = false;
+                activeBubbleIdx = -1;
+            }
+            isDraggingRing = false;
+        };
+
+        function getPoint(e) {
+            return {
+                x: e.touches ? e.touches[0].clientX : e.clientX,
+                y: e.touches ? e.touches[0].clientY : e.clientY
+            };
+        }
+
+        function launch(bubble) {
+            if(navigator.vibrate) navigator.vibrate([30,50,30]);
+            // Flash effect
+            bubble.el.style.backgroundColor = '#fff';
+            setTimeout(() => {
+                window.location.href = bubble.url;
+                // Reset visuals in case user comes back
+                bubble.el.style.backgroundColor = '';
+                updateLayout();
+            }, 150);
+        }
+
+        function snapBack(bubble, idx) {
+            // Use CSS transition for smooth snap
+            bubble.el.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+            setTransform(bubble.el, bubble.anchorX, bubble.anchorY);
+            
+            // We need to animate the line via JS frame loop because SVG lines don't transition with CSS transforms
+            const startTime = performance.now();
+            const startX = bubble.x;
+            const startY = bubble.y;
+            
+            function animateSnap(time) {
+                const progress = (time - startTime) / 400; // 400ms duration
+                if (progress < 1) {
+                    // Simple lerp for line
+                    const currX = startX + (bubble.anchorX - startX) * progress;
+                    const currY = startY + (bubble.anchorY - startY) * progress;
+                    updateLine(idx, centerX, centerY, currX, currY);
+                    requestAnimationFrame(animateSnap);
+                } else {
+                    // Finish
+                    bubble.el.style.transition = ''; // clear transition
+                    updateLine(idx, centerX, centerY, bubble.anchorX, bubble.anchorY);
+                    updateLayout();
+                }
+            }
+            requestAnimationFrame(animateSnap);
+        }
+
+        function loop() {
+            // Keep animation frame open for expansion
+            requestAnimationFrame(loop);
+        }
+
+        // Global Listeners
+        window.addEventListener('resize', resize);
+        document.addEventListener('mousedown', handleStart);
+        document.addEventListener('mousemove', handleMove);
+        document.addEventListener('mouseup', handleEnd);
+        document.addEventListener('touchstart', handleStart, {passive:false});
+        document.addEventListener('touchmove', handleMove, {passive:false});
+        document.addEventListener('touchend', handleEnd);
+
+        init();
+
+        // --- SERVICE WORKER REGISTRATION (Force Update Logic) ---
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').then(reg => {
+                reg.addEventListener('updatefound', () => {
+                    const newWorker = reg.installing;
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            // New version detected. Reload to force update.
+                            console.log('New version found. Reloading...');
+                            window.location.reload();
+                        }
+                    });
+                });
+            });
+            
+            // Reload if controller changes (e.g. claim() called in sw.js)
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                window.location.reload();
+            });
+        }
+    </script>
+</body>
+</html>
